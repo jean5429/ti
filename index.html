@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia Interativo para o Primeiro Emprego em TI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base styles for HTML and Body */
+        body, html {
+            height: 100vh; /* Make sure both HTML and Body take full viewport height */
+            overflow: hidden; /* Prevent native scrolling, JavaScript will handle it */
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.5s ease-in-out; /* Smooth background color transition */
+            -webkit-overflow-scrolling: touch; /* Enhance scrolling performance on iOS */
+        }
+
+        /* Section Wrapper - Each "Slide" */
+        .section-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5rem 2rem; /* Generous padding for desktop */
+            box-sizing: border-box;
+            
+            /* Positioning and Transition for Slide Effect */
+            position: absolute; /* Absolute positioning for full control */
+            top: 0;
+            left: 0;
+            width: 100%;
+            transition: transform 0.8s ease-in-out, opacity 0.8s ease-in-out, background-color 0.5s ease-in-out;
+            opacity: 0; /* Hidden by default */
+            pointer-events: none; /* Do not block interaction when hidden */
+            will-change: transform, opacity; /* Performance optimization for animation */
+            z-index: 0; /* Default z-index */
+        }
+
+        /* Active Section */
+        .section-wrapper.active {
+            opacity: 1; /* Fully visible */
+            pointer-events: auto; /* Allow interaction */
+            transform: translateY(0); /* Positioned in the viewport */
+            z-index: 1; /* Bring to front */
+        }
+
+        /* --- NOVO CSS PARA #hero.section-wrapper --- */
+        /* Isso garante que o #hero comece visível ao carregar a página */
+        #hero.section-wrapper {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+            z-index: 1;
+        }
+        /* ------------------------------------------- */
+
+        /* Previous Sections (already scrolled past) */
+        .section-wrapper.prev {
+            transform: translateY(-100vh); /* Move above the viewport */
+            opacity: 0; /* Fade out */
+        }
+
+        /* Next Sections (yet to be scrolled to) */
+        .section-wrapper.next {
+            transform: translateY(100vh); /* Move below the viewport */
+            opacity: 0; /* Fade out */
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px; /* Increased for better desktop visualization */
+            margin: auto;
+            height: 450px; /* Default height */
+            max-height: 550px; /* Max height */
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 500px; /* Further increase on larger screens */
+            }
+        }
+
+        /* Animation for individual elements (fade-in, slide-up) */
+        .animate-in {
+            opacity: 0;
+            transform: translateY(35px); /* Slide up effect */
+            transition: opacity 1s ease-out, transform 1s ease-out; /* Slower transition for entry */
+        }
+        .animate-in.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Staggered animation delay for elements entering the screen */
+        .animate-in:nth-child(1) { transition-delay: 0s; }
+        .animate-in:nth-child(2) { transition-delay: 0.18s; }
+        .animate-in:nth-child(3) { transition-delay: 0.36s; }
+        .animate-in:nth-child(4) { transition-delay: 0.54s; }
+        .animate-in:nth-child(5) { transition-delay: 0.72s; }
+        .animate-in:nth-child(6) { transition-delay: 0.9s; }
+        .animate-in:nth-child(7) { transition-delay: 1.08s; }
+        .animate-in:nth-child(8) { transition-delay: 1.26s; }
+        .animate-in:nth-child(9) { transition-delay: 1.44s; }
+        /* For grid items */
+        .grid > .animate-in:nth-child(1) { transition-delay: 0s; }
+        .grid > .animate-in:nth-child(2) { transition-delay: 0.18s; }
+        .grid > .animate-in:nth-child(3) { transition-delay: 0.36s; }
+        .grid > .animate-in:nth-child(4) { transition-delay: 0.54s; }
+
+        /* Liquid Glass Card Effect */
+        .glass-card {
+            background-color: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
+            border-radius: 0.75rem; /* Tailwind's rounded-xl */
+            transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+        }
+        .glass-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Corner Lines */
+        .corner-line {
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            border-color: #6366f1; /* indigo-500 */
+            border-style: solid;
+            z-index: 10;
+            pointer-events: none;
+            opacity: 0.7;
+            transition: all 0.3s ease-in-out; /* Smooth transition for resizing/repositioning */
+        }
+        .corner-line.top-left { top: 30px; left: 30px; border-width: 4px 0 0 4px; }
+        .corner-line.top-right { top: 30px; right: 30px; border-width: 4px 4px 0 0; }
+        .corner-line.bottom-left { bottom: 30px; left: 30px; border-width: 0 0 4px 4px; }
+        .corner-line.bottom-right { bottom: 30px; right: 30px; border-width: 0 4px 4px 0; }
+
+        /* Responsive Adjustments for Mobile (max-width: 767px) */
+        @media (max-width: 767px) {
+            .section-wrapper {
+                padding: 2.5rem 1rem; /* Reduced padding for more content space */
+            }
+            .glass-card {
+                padding: 1.25rem; /* Reduced padding for cards on mobile */
+            }
+            h2.text-5xl {
+                font-size: 2.5rem; /* Adjust main title size */
+                line-height: 1.2;
+            }
+            h3.text-5xl {
+                font-size: 2rem; /* Adjust section title size */
+                line-height: 1.2;
+            }
+            p.text-2xl, ul.text-xl li {
+                font-size: 1rem; /* Adjust general text size for readability */
+                line-height: 1.5;
+            }
+            h4.text-3xl {
+                font-size: 1.5rem; /* Adjust card title size */
+            }
+            .chart-container {
+                height: 300px; /* Smaller height for chart on mobile */
+            }
+            /* Corner Lines for mobile - Adjusted margins */
+            .corner-line {
+                width: 40px; /* Smaller size */
+                height: 40px;
+                border-width: 2px !important; /* Thinner border for corners */
+            }
+            .corner-line.top-left { top: 10px; left: 10px; border-width: 2px 0 0 2px !important; }
+            .corner-line.top-right { top: 10px; right: 10px; border-width: 2px 2px 0 0 !important; }
+            .corner-line.bottom-left { bottom: 10px; left: 10px; border-width: 0 0 2px 2px !important; }
+            .corner-line.bottom-right { bottom: 10px; right: 10px; border-width: 0 2px 2px 0 !important; }
+
+            /* Footer adjustments for mobile */
+            footer .text-3xl { font-size: 1.5rem; }
+            footer .text-2xl { font-size: 1rem; }
+            footer .text-4xl { font-size: 1.8rem; }
+            footer .text-xl { font-size: 0.9rem; }
+            footer .px-10 { padding-left: 1.5rem; padding-right: 1.5rem; }
+            footer .py-5 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+            footer .w-36, footer .h-36 { width: 100px; height: 100px; } /* Reduce LinkedIn photo size */
+        }
+
+        /* Further adjustments for very small screens (max-width: 480px) */
+        @media (max-width: 480px) {
+            .section-wrapper {
+                padding: 1.5rem 0.5rem; /* Even more reduced padding */
+            }
+            .glass-card {
+                padding: 0.75rem; /* Even smaller padding for cards */
+            }
+            h2.text-5xl {
+                font-size: 1.8rem; /* Smaller main title */
+            }
+            h3.text-5xl {
+                font-size: 1.4rem; /* Smaller section title */
+            }
+            p.text-2xl, ul.text-xl li {
+                font-size: 0.85rem; /* Smaller general text size */
+                line-height: 1.4;
+            }
+            h4.text-3xl {
+                font-size: 1.2rem; /* Smaller card title */
+            }
+            .chart-container {
+                height: 200px; /* Even smaller height for chart */
+            }
+            /* Corner Lines for very small screens - Adjusted margins */
+            .corner-line {
+                width: 30px; /* Even smaller size */
+                height: 30px;
+                border-width: 1.5px !important; /* Thinner border */
+            }
+            .corner-line.top-left { top: 5px; left: 5px; border-width: 1.5px 0 0 1.5px !important; }
+            .corner-line.top-right { top: 5px; right: 5px; border-width: 1.5px 1.5px 0 0 !important; }
+            .corner-line.bottom-left { bottom: 5px; left: 5px; border-width: 0 0 1.5px 1.5px !important; }
+            .corner-line.bottom-right { bottom: 5px; right: 5px; border-width: 0 1.5px 1.5px 0 !important; }
+
+            /* Adjusted sizes for elements in page 4 (LinkedIn) - NEW */
+            #ferramentas-linkedin .glass-card ul li {
+                font-size: 0.9rem; /* Adjust font size for list items */
+                margin-bottom: 0.75rem; /* Add some space between items */
+            }
+            #ferramentas-linkedin .glass-card {
+                padding: 1rem; /* Adjust padding for the card */
+            }
+
+            /* Adjusted sizes for elements in page 5 (Currículo) - NEW */
+            #ferramentas-curriculo .glass-card ul li {
+                font-size: 0.9rem; /* Adjust font size for list items */
+                margin-bottom: 0.75rem; /* Add some space between items */
+            }
+            #ferramentas-curriculo .glass-card {
+                padding: 1rem; /* Adjust padding for the card */
+            }
+
+            /* Adjusted sizes for elements in page 9 (Carreira) */
+            #carreira .grid {
+                grid-template-columns: 1fr; /* Stack cards vertically on small screens */
+                gap: 1rem; /* Reduced gap */
+            }
+            #carreira .glass-card {
+                padding: 0.75rem;
+            }
+            #carreira .glass-card h4 {
+                font-size: 1.1rem;
+                margin-bottom: 0.5rem;
+            }
+            #carreira .glass-card ul {
+                font-size: 0.8rem;
+                space-y: 0.25rem;
+            }
+            #carreira .chart-container {
+                height: 180px; /* Smallest chart height */
+            }
+
+            /* Adjusted sizes for elements in page 10 (Dicas Finais) */
+            #dicas .grid {
+                grid-template-columns: 1fr; /* Stack cards vertically on small screens */
+                gap: 1rem; /* Reduced gap */
+            }
+            #dicas .glass-card {
+                padding: 0.75rem;
+            }
+            #dicas .glass-card h4 {
+                font-size: 1.1rem;
+                margin-bottom: 0.5rem;
+            }
+            #dicas .glass-card p {
+                font-size: 0.8rem;
+            }
+            #dicas .text-6xl {
+                font-size: 3rem; /* Smaller icons */
+                margin-bottom: 0.5rem;
+            }
+
+            /* Adjusted sizes for elements in the last page (Footer - Obrigado) */
+            footer .text-3xl { font-size: 1.2rem; margin-bottom: 0.5rem;}
+            footer .text-2xl { font-size: 0.85rem; }
+            footer .text-5xl { font-size: 1.8rem; margin-top: 1rem; margin-bottom: 0.8rem;}
+            footer .text-4xl { font-size: 1.5rem; }
+            footer .text-xl { font-size: 0.8rem; }
+            footer .w-36, footer .h-36 { width: 80px; height: 80px; } /* Even smaller LinkedIn photo size */
+            footer a {
+                padding: 0.5rem 1.5rem; /* Smaller button padding */
+                font-size: 0.9rem; /* Smaller button font */
+            }
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-stone-50 text-stone-800">
+
+    <div class="corner-line top-left"></div>
+    <div class="corner-line top-right"></div>
+    <div class="corner-line bottom-left"></div>
+    <div class="corner-line bottom-right"></div>
+
+    <main class="container mx-auto">
+
+        <div class="section-wrapper bg-stone-50 active" id="hero">
+            <section class="text-center px-4 max-w-screen-2xl mx-auto">
+                <h2 class="text-5xl md:text-7xl font-extrabold text-stone-800 mb-8 animate-in is-visible">A Jornada de Carreira em TI</h2>
+                <p class="text-2xl md:text-3xl text-stone-600 max-w-4xl mx-auto animate-in is-visible">As etapas essenciais, desde a preparação inicial até as dicas para o crescimento contínuo na carreira de tecnologia.</p>
+            </section>
+        </div>
+        
+        <div class="section-wrapper bg-stone-100" id="preparacao-autoconhecimento">
+            <section class="px-4 max-w-screen-2xl mx-auto">
+                <div class="text-center mb-14 animate-in">
+                    <span class="text-xl font-semibold text-indigo-500 uppercase">Etapa 1</span>
+                    <h3 class="text-5xl font-bold mt-2 flex items-center justify-center gap-5">🧠 Preparação: Autoconhecimento</h3>
+                    <p class="mt-5 text-2xl text-stone-600">O primeiro passo é entender suas próprias preferências e aptidões para direcionar sua busca de forma eficaz.</p>
+                </div>
+                <div class="glass-card p-10 rounded-xl animate-in max-w-5xl mx-auto">
+                    <div class="text-6xl mb-8 text-center">💡</div>
+                    <h4 class="font-bold text-3xl mb-5 text-center">Defina seu Foco</h4>
+                    <ul class="space-y-4 text-xl text-stone-700 list-disc list-inside">
+                        <li>Defina a área de atuação: front-end, back-end, full-stack, DevOps, dados, etc.</li>
+                        <li>Entenda se prefere startups (mais dinâmicas e com maior autonomia) ou empresas grandes (mais estruturadas e com processos definidos).</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+
+        <div class="section-wrapper bg-stone-200" id="preparacao-base-tecnica">
+            <section class="px-4 max-w-screen-2xl mx-auto">
+                <div class="text-center mb-14 animate-in">
+                    <span class="text-xl font-semibold text-indigo-500 uppercase">Etapa 2</span>
+                    <h3 class="text-5xl font-bold mt-2 flex items-center justify-center gap-5">⚙️ Preparação: Base Técnica Sólida</h3>
+                    <p class="mt-5 text-2xl text-stone-600">Aprofundar-se nos fundamentos é crucial para qualquer área de TI, garantindo que você tenha a base para resolver problemas complexos.</p>
+                </div>
+                <div class="glass-card p-10 rounded-xl animate-in max-w-5xl mx-auto">
+                    <div class="text-6xl mb-8 text-center">💻</div>
+                    <h4 class="font-bold text-3xl mb-5 text-center">Domínio Essencial</h4>
+                    <ul class="space-y-4 text-xl text-stone-700 list-disc list-inside">
+                        <li>Domínio de lógica de programação e estruturas de dados (essencial para entrevistas técnicas e desafios do dia a dia).</li>
+                        <li>Escolha uma stack inicial (ex: JavaScript + React + Node.js ou Python + Django) e dedique-se a ela para construir proficiência.</li>
+                        </ul>
+                </div>
+            </section>
+        </div>
+
+        <div class="section-wrapper bg-stone-100" id="preparacao-projetos">
+            <section class="px-4 max-w-screen-2xl mx-auto">
+                <div class="text-center mb-14 animate-in">
+                    <span class="text-xl font-semibold text-indigo-500 uppercase">Etapa 3</span>
+                    <h3 class="text-5xl font-bold mt-2 flex items-center justify-center gap-5">🚀 Preparação: Projetos Práticos</h3>
+                    <p class="mt-5 text-2xl text-stone-600">Seu portfólio é a prova das suas habilidades. Projetos bem elaborados demonstram sua capacidade de aplicar o conhecimento na prática.</p>
+                </div>
+                <div class="glass-card p-10 rounded-xl animate-in max-w-5xl mx-auto">
+                    <div class="text-6xl mb-8 text-center">📂</div>
+                    <h4 class="font-bold text-3xl mb-5 text-center">Construa e Compartilhe</h4>
+                    <ul class="space-y-4 text-xl text-stone-700 list-disc list-inside">
+                        <li>Tenha pelo menos 2-3 projetos relevantes no GitHub, com um deles completo e um README bem documentado.</li>
+                        <li>Projetos que resolvem problemas reais ou demonstram criatividade chamam mais atenção do que simples clones.</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+            
+        <div class="section-wrapper bg-stone-50" id="ferramentas-linkedin">
+            <section class="px-4 max-w-screen-2xl mx-auto">
+                <div class="text-center mb-14 animate-in">
+                    <span class="text-xl font-semibold text-indigo-500 uppercase">Etapa 4</span>
+                    <h3 class="text-5xl font-bold mt-2 flex items-center justify-center gap-5">🌐 Ferramentas Essenciais: LinkedIn</h3>
+                    <p class="mt-5 text-2xl text-stone-600">Seu LinkedIn é seu cartão de visitas digital. Um perfil otimizado é fundamental para ser encontrado por recrutadores.</p>
+                </div>
+
+                <div class="glass-card p-10 rounded-xl animate-in max-w-5xl mx-auto">
+                    <ul class="space-y-5 text-xl text-stone-700 list-inside">
+                        <li><span class="font-semibold text-stone-800">🖼️ Foto e Cabeçalho Profissional:</span> Use uma foto limpa e um cabeçalho com título claro (ex: "Estudante de TI | Back-end com Python | Buscando Primeira Oportunidade").</li>
+                        <li><span class="font-semibold text-stone-800">📝 Sobre:</span> Texto objetivo com seus objetivos, habilidades e diferenciais (evite clichês como "apaixonado por tecnologia"). Inclua palavras-chave relevantes para aparecer em buscas (ex: "Java", "SQL", "Desenvolvimento Ágil").</li>
+                        <li><span class="font-semibold text-stone-800">🎓 Experiência:</span> Mesmo sem experiência formal, inclua projetos acadêmicos, freelances ou cursos relevantes que demonstrem suas capacidades.</li>
+                        <li><span class="font-semibold text-stone-800">💬 Atividade:</span> Poste sobre seus aprendizados, compartilhe artigos da área e interaja com posts de recrutadores e outros profissionais.</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+
+        <div class="section-wrapper bg-stone-100" id="ferramentas-curriculo">
+            <section class="px-4 max-w-screen-2xl mx-auto">
+                <div class="text-center mb-14 animate-in">
+                    <span class="text-xl font-semibold text-indigo-500 uppercase">Etapa 5</span>
+                    <h3 class="text-5xl font-bold mt-2 flex items-center justify-center gap-5">📄 Ferramentas Essenciais: Currículo</h3>
+                    <p class="mt-5 text-2xl text-stone-600">Seu currículo é um documento conciso que destaca suas qualificações mais relevantes. Menos é mais: seja direto e impactante.</p>
+                </div>
+
+                <div class="glass-card p-10 rounded-xl animate-in max-w-5xl mx-auto">
+                    <ul class="space-y-5 text-xl text-stone-700 list-inside">
+                        <li><span class="font-semibold text-stone-800">📄 Formato:</span> Mantenha em 1 página, com layout simples e limpo (sempre em PDF). Evite fotos, a menos que seja explicitamente exigido.</li>
+                        <li><span class="font-semibold text-stone-800">🚀 Destaques:</span> Coloque suas habilidades técnicas no topo, separadas por nível de proficiência ("Avançado", "Intermediário"). Inclua links para seus projetos no GitHub/GitLab e mencione as tecnologias usadas.</li>
+                        <li><span class="font-semibold text-stone-800">🔄 Experiência:</span> Liste em ordem reversa (mais recente primeiro). Inclua estágios, freelances ou trabalhos anteriores (mesmo não-TI) que demonstrem "transferable skills" (habilidades transferíveis).</li>
+                        <li><span class="font-semibold text-stone-800">📚 Educação:</span> Faculdade não é obrigatória para todas as empresas, mas ajuda em tradicionais. Bootcamps e certificações relevantes podem substituir ou complementar.</li>
+                        <li><span class="font-semibold text-stone-800">❌ Omitir:</span> Cursos irrelevantes ou básicos (ex: "Pacote Office"). Foco no que é diretamente aplicável à vaga.</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+            
+        <div class="section-wrapper bg-stone-200" id="processo-rh">
+            <section class="px-4 max-w-screen-2xl mx-auto">
+                <div class="text-center mb-14 animate-in">
+                    <span class="text-xl font-semibold text-indigo-500 uppercase">Etapa 6</span>
+                    <h3 class="text-5xl font-bold mt-2 flex items-center justify-center gap-5">🗣️ Processo Seletivo: Entrevista com RH (Soft Skills)</h3>
+                    <p class="mt-5 text-2xl text-stone-600">A primeira impressão é crucial. Nesta etapa, o foco é entender suas habilidades comportamentais e seu alinhamento com a cultura da empresa.</p>
+                </div>
+                <div class="glass-card p-10 rounded-xl animate-in max-w-4xl mx-auto">
+                    <h4 class="font-bold text-3xl mb-5 text-center">Comunicação e Preparo</h4>
+                    <ul class="space-y-4 text-xl text-stone-700 list-disc list-inside">
+                        <li><span class="font-semibold text-stone-800">Comportamento:</span> Demonstre comunicação clara e use exemplos concretos. A técnica STAR (Situação, Tarefa, Ação, Resultado) é excelente para perguntas situacionais.</li>
+                        <li><span class="font-semibold text-stone-800">Perguntas Comuns:</span> Prepare-se para "Conte uma vez que você resolveu um conflito em equipe" ou "Como você lida com prazos apertados?".</li>
+                        <li><span class="font-semibold text-stone-800">Pesquisa Prévia:</span> Conheça a cultura da empresa (Glassdoor, site corporativo) e pesquise médias salariais para ter uma expectativa de salário pretendido, considerando benefícios.</li>
+                        </ul>
+                </div>
+            </section>
+        </div>
+
+        <div class="section-wrapper bg-stone-100" id="processo-teste-tecnico">
+            <section class="px-4 max-w-screen-2xl mx-auto">
+                <div class="text-center mb-14 animate-in">
+                    <span class="text-xl font-semibold text-indigo-500 uppercase">Etapa 7</span>
+                    <h3 class="text-5xl font-bold mt-2 flex items-center justify-center gap-5">🧪 Processo Seletivo: Teste Técnico</h3>
+                    <p class="mt-5 text-2xl text-stone-600">Esta etapa avalia suas habilidades práticas de programação e resolução de problemas. A prática leva à perfeição.</p>
+                </div>
+                <div class="glass-card p-10 rounded-xl animate-in max-w-4xl mx-auto">
+                    <h4 class="font-bold text-3xl mb-5 text-center">Desafios e Dicas</h4>
+                    <ul class="space-y-4 text-xl text-stone-700 list-disc list-inside">
+                        <li><span class="font-semibold text-stone-800">O que Esperar:</span> Desafios em plataformas como HackerRank ou LeetCode (foco em algoritmos), ou a construção de projetos simples (ex: CRUD).</li>
+                        <li><span class="font-semibold text-stone-800">Dicas:</span> Pratique problemas de nível médio no LeetCode regularmente. Durante a entrevista, comente seu código e explique seu raciocínio ("think aloud") para mostrar seu processo de pensamento.</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+
+        <div class="section-wrapper bg-stone-50" id="processo-entrevista-tecnica">
+            <section class="px-4 max-w-screen-2xl mx-auto">
+                <div class="text-center mb-14 animate-in">
+                    <span class="text-xl font-semibold text-indigo-500 uppercase">Etapa 8</span>
+                    <h3 class="text-5xl font-bold mt-2 flex items-center justify-center gap-5">💬 Processo Seletivo: Entrevista Técnica</h3>
+                    <p class="mt-5 text-2xl text-stone-600">A conversa com a equipe técnica é a oportunidade de demonstrar seu conhecimento aprofundado e sua capacidade de discutir soluções.</p>
+                </div>
+                <div class="glass-card p-10 rounded-xl animate-in max-w-4xl mx-auto">
+                    <h4 class="font-bold text-3xl mb-5 text-center">Aprofundando o Conhecimento</h4>
+                    <ul class="space-y-4 text-xl text-stone-700 list-disc list-inside">
+                        <li><span class="font-semibold text-stone-800">Ao Vivo:</span> Explique seu raciocínio antes de começar a codificar. Prepare-se para perguntas sobre arquitetura, otimização de código e trade-offs entre diferentes soluções.</li>
+                        <li><span class="font-semibold text-stone-800">Take-home Assignment:</span> Se for um desafio para fazer em casa, entregue algo funcional, mesmo que simples. A documentação do seu código e a explicação das suas escolhas são cruciais.</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+            
+        <div class="section-wrapper bg-stone-100" id="carreira">
+            <section class="px-4 max-w-screen-2xl mx-auto">
+                <div class="text-center mb-14 animate-in">
+                    <span class="text-xl font-semibold text-indigo-500 uppercase">Etapa 9</span>
+                    <h3 class="text-5xl font-bold mt-2 flex items-center justify-center gap-5">📈 Stack Inicial vs. Crescimento na Carreira</h3>
+                    <p class="mt-5 text-2xl text-stone-600">Entrar no mercado exige foco, mas crescer na carreira exige amplitude. Entenda como equilibrar a profundidade inicial com o aprendizado contínuo para se tornar um profissional completo.</p>
+                </div>
+                <div class="grid lg:grid-cols-2 gap-12 items-stretch">
+                    <div class="glass-card p-10 rounded-xl animate-in flex flex-col">
+                        <h4 class="font-bold text-3xl mb-5 text-center">🎯 Foco Inicial</h4>
+                        <ul class="space-y-4 text-xl text-stone-700 list-disc list-inside flex-grow">
+                            <li>Foque em uma stack para entrar no mercado (ex: JavaScript/React ou Python + Django).</li>
+                            <li>Profundidade é mais importante que superficialidade em várias linguagens.</li>
+                        </ul>
+                        <h4 class="font-bold text-3xl my-5 text-center">🌱 Crescimento a Longo Prazo</h4>
+                        <ul class="space-y-4 text-xl text-stone-700 list-disc list-inside">
+                            <li>Aprenda fundamentos teóricos: algoritmos, redes, sistemas distribuídos, clean code.</li>
+                            <li>Torne-se multistack (ex: DevOps precisa de cloud + Docker + CI/CD).</li>
+                            <li>Estude inglês técnico (documentações e reuniões em empresas globais).</li>
+                        </ul>
+                    </div>
+                    <div class="glass-card p-10 rounded-xl animate-in flex flex-col justify-center items-center">
+                        <h4 class="font-bold text-3xl mb-5 text-center">Competências para o Futuro</h4>
+                        <div class="chart-container flex justify-center items-center">
+                            <canvas id="careerChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="section-wrapper bg-stone-50" id="dicas">
+            <section class="px-4 max-w-screen-2xl mx-auto">
+                <div class="text-center mb-14 animate-in">
+                    <span class="text-xl font-semibold text-indigo-500 uppercase">Etapa 10</span>
+                    <h3 class="text-5xl font-bold mt-2 flex items-center justify-center gap-5">✨ Dicas Finais para o Sucesso</h3>
+                    <p class="mt-5 text-2xl text-stone-600">Além da técnica, outras atitudes aceleram seu desenvolvimento e abrem portas. Estas dicas são o toque final para uma estratégia de busca de emprego bem-sucedida.</p>
+                </div>
+                <div class="grid md:grid-cols-3 gap-12 text-center">
+                    <div class="glass-card p-10 rounded-xl animate-in">
+                        <div class="text-6xl mb-6">🤝</div>
+                        <h4 class="font-semibold text-3xl">Networking</h4>
+                        <p class="text-xl text-stone-600 mt-2">Participe de meetups, hackathons e contribua em projetos open-source (mesmo que com documentação).</p>
+                    </div>
+                    <div class="glass-card p-10 rounded-xl animate-in">
+                        <div class="text-6xl mb-6">👨‍🏫</div>
+                        <h4 class="font-semibold text-3xl">Mentoria</h4>
+                        <p class="text-xl text-stone-600 mt-2">Busque mentores no LinkedIn ou em plataformas como a ADPList para orientação e insights.</p>
+                    </div>
+                    <div class="glass-card p-10 rounded-xl animate-in">
+                        <div class="text-6xl mb-6">💪</div>
+                        <h4 class="font-semibold text-3xl">Resiliência</h4>
+                        <p class="text-xl text-stone-600 mt-2">Rejeições são normais e fazem parte do processo. Use os feedbacks para melhorar continuamente e não desista.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+    </main>
+    
+    <footer class="bg-stone-100">
+        <div class="section-wrapper text-center text-stone-600 py-16">
+            <div class="max-w-4xl mx-auto px-4">
+                <p class="font-bold text-3xl mb-5 animate-in">"TI é uma área de aprendizado contínuo."</p>
+                <p class="text-2xl animate-in">"Comece com um foco claro, mas esteja aberto a mudanças. O primeiro emprego é o mais difícil – depois que você entra, o crescimento depende do seu esforço e curiosidade."</p>
+                <h3 class="text-5xl font-bold mt-16 mb-8 text-indigo-600 animate-in">Obrigado! 🙏</h3>
+                <p class="text-2xl text-stone-700 mb-8 animate-in">Conecte-se comigo no LinkedIn para mais dicas e oportunidades:</p>
+                <div class="flex flex-col items-center justify-center space-y-8 animate-in">
+                    <img src="https://media.licdn.com/dms/image/v2/C4E03AQGRNr5oL7nLPA/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1591035167434?e=1758153600&v=beta&t=GkFSVcCUEAzMe7-CiRzYNbPebIlzLoqmO95q1mpVKjU" alt="Foto de Perfil do LinkedIn de Jean Gonçalves" class="rounded-full w-36 h-36 object-cover shadow-lg border-4 border-white">
+                    <h4 class="text-4xl font-bold text-stone-800">Jean Gonçalves</h4>
+                    <p class="text-2xl text-stone-600">Tech Lead & Software Development Manager</p>
+                    <a href="https://www.linkedin.com/in/jean-gon%C3%A7alves-489b7b103/" target="_blank" class="inline-flex items-center justify-center px-10 py-5 bg-indigo-500 text-white font-semibold text-xl rounded-full shadow-lg hover:bg-indigo-600 transition-all duration-300 transform hover:scale-105">
+                        <span class="mr-4">🔗</span> Meu Perfil no LinkedIn
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <div id="progress-bar" class="fixed bottom-0 left-0 w-full h-2 bg-stone-200 z-50">
+        <div id="progress-bar-fill" class="h-full bg-indigo-500 transition-all duration-500 ease-out" style="width: 0%;"></div>
+    </div>
+
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('careerChart');
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Fundamentos (Algoritmos, Redes)', ['Inglês', 'Técnico'], 'Cloud & DevOps', 'Soft Skills (Comunicação)', 'Novas Stacks'],
+                    datasets: [{
+                        label: 'Nível de Importância a Longo Prazo',
+                        data: [9, 8, 7, 8, 6],
+                        fill: true,
+                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                        borderColor: 'rgb(99, 102, 241)',
+                        pointBackgroundColor: 'rgb(99, 102, 241)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(99, 102, 241)'
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 16
+                                },
+                                color: '#333'
+                            },
+                            ticks: {
+                                backdropColor: 'transparent',
+                                stepSize: 2,
+                                font: {
+                                    size: 14
+                                }
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 10
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 16
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.r !== null) {
+                                        label += context.parsed.r;
+                                    }
+                                    return label;
+                                }
+                            },
+                            titleFont: {
+                                size: 18
+                            },
+                            bodyFont: {
+                                size: 16
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        const footerDiv = document.querySelector('footer > div');
+        if (footerDiv && !footerDiv.classList.contains('section-wrapper')) {
+            footerDiv.classList.add('section-wrapper');
+        }
+        
+        const allSections = document.querySelectorAll('.section-wrapper');
+        let currentSectionIndex = 0;
+        let isScrolling = false;
+        const scrollDelay = 900; 
+        const progressBarFill = document.getElementById('progress-bar-fill');
+
+        function updateProgressBar() {
+            const progress = ((currentSectionIndex + 1) / allSections.length) * 100;
+            progressBarFill.style.width = `${progress}%`;
+        }
+
+        function scrollToSection(index) {
+            if (index < 0 || index >= allSections.length || isScrolling) {
+                return;
+            }
+
+            isScrolling = true;
+
+            const previousActiveSection = allSections[currentSectionIndex];
+            currentSectionIndex = index;
+            const targetSection = allSections[currentSectionIndex];
+
+            // 1. Desativar animações da seção anterior com um pequeno delay
+            if (previousActiveSection) {
+                // Se a seção anterior é a Hero e estamos rolando para baixo
+                // Ou se a seção anterior está sendo enviada para 'prev'
+                // Remove as classes de visibilidade dos elementos internos para que não 'piscem'
+                setTimeout(() => { 
+                    previousActiveSection.querySelectorAll('.animate-in').forEach(el => {
+                        el.classList.remove('is-visible');
+                    });
+                }, 500); 
+            }
+
+            // 2. Gerenciar classes para todas as seções com base na nova posição relativa
+            allSections.forEach((section, idx) => {
+                if (idx === currentSectionIndex) {
+                    section.classList.add('active'); 
+                    section.classList.remove('prev', 'next');
+                } else if (idx < currentSectionIndex) {
+                    section.classList.add('prev'); 
+                    section.classList.remove('active', 'next');
+                } else {
+                    section.classList.add('next'); 
+                    section.classList.remove('active', 'prev');
+                }
+            });
+
+            // 3. Atualizar a cor de fundo do body para corresponder à seção ativa
+            const currentBgClass = Array.from(targetSection.classList).find(cls => cls.startsWith('bg-stone-'));
+            if (currentBgClass) {
+                document.body.classList.forEach(cls => {
+                    if (cls.startsWith('bg-stone-')) {
+                        document.body.classList.remove(cls);
+                    }
+                });
+                document.body.classList.add(currentBgClass);
+            } 
+
+            // 4. Acionar animações para os elementos na seção recém-ativa APÓS a mudança da seção
+            setTimeout(() => {
+                const animatedElements = targetSection.querySelectorAll('.animate-in');
+                animatedElements.forEach(el => {
+                    void el.offsetWidth; 
+                    el.classList.add('is-visible');
+                });
+            }, 100); 
+
+            // 5. Atualizar a barra de progresso
+            updateProgressBar();
+
+            // 6. Permitir novos scrolls após a transição completa
+            setTimeout(() => {
+                isScrolling = false;
+            }, scrollDelay);
+        }
+
+        // --- INICIALIZAÇÃO CORRIGIDA ---
+        // Remova esta linha, pois as classes já estão no HTML.
+        // scrollToSection(0);
+
+
+        // Wheel event for desktop scrolling
+        window.addEventListener('wheel', function(event) {
+            event.preventDefault(); 
+            if (isScrolling) return;
+
+            if (event.deltaY > 0) { 
+                scrollToSection(currentSectionIndex + 1);
+            } else { 
+                scrollToSection(currentSectionIndex - 1);
+            }
+        }, { passive: false });
+
+        // Keyboard navigation (Arrow keys, Spacebar, Home, End)
+        window.addEventListener('keydown', function(event) {
+            if (isScrolling) return;
+
+            let nextIndex = currentSectionIndex;
+            if (event.key === 'ArrowDown' || event.key === 'PageDown' || event.key === ' ') {
+                nextIndex++;
+            } else if (event.key === 'ArrowUp' || event.key === 'PageUp') {
+                nextIndex--;
+            } else if (event.key === 'Home') {
+                nextIndex = 0;
+            } else if (event.key === 'End') {
+                nextIndex = allSections.length - 1; 
+            }
+
+            if (nextIndex !== currentSectionIndex) {
+                scrollToSection(nextIndex);
+            }
+        });
+
+        // Touch/Swipe handling for mobile devices
+        let touchStartY = 0;
+        let touchEndY = 0;
+        const swipeThreshold = 50;
+
+        window.addEventListener('touchstart', (event) => {
+            if (isScrolling) {
+                event.preventDefault(); 
+                return;
+            }
+            touchStartY = event.touches[0].clientY;
+            touchEndY = touchStartY;
+        }, { passive: false });
+
+        window.addEventListener('touchmove', (event) => {
+            if (isScrolling) {
+                event.preventDefault(); 
+                return;
+            }
+            touchEndY = event.touches[0].clientY;
+            if (Math.abs(touchEndY - touchStartY) > 5) {
+                event.preventDefault();
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchend', (event) => {
+            if (isScrolling) {
+                touchStartY = 0;
+                touchEndY = 0;
+                return;
+            }
+            
+            const deltaY = touchEndY - touchStartY;
+
+            if (Math.abs(deltaY) < swipeThreshold) {
+                touchStartY = 0;
+                touchEndY = 0;
+                return;
+            }
+
+            if (deltaY < -swipeThreshold) { 
+                scrollToSection(currentSectionIndex + 1);
+            } else if (deltaY > swipeThreshold) { 
+                scrollToSection(currentSectionIndex - 1);
+            }
+
+            touchStartY = 0;
+            touchEndY = 0;
+        }, { passive: false });
+
+        window.addEventListener('touchcancel', (event) => {
+            touchStartY = 0;
+            touchEndY = 0;
+            isScrolling = false;
+        }, { passive: false });
+
+        // A chamada a `scrollToSection(0)` foi removida porque a seção `hero` já inicia visível
+        // com as classes CSS e HTML adicionadas. 
+        // O restante do JS de rolagem controlará as transições a partir daí.
+        
+        // No entanto, ainda precisamos inicializar a barra de progresso
+        updateProgressBar();
+    });
+    </script>
+
+</body>
+</html>
