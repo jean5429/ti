@@ -171,7 +171,32 @@
             footer .w-36, footer .h-36 { width: 100px; height: 100px; }
         }
 
-        /* Reverted previous specific mobile adjustments for 9-B and 10 */
+        @media (min-width: 481px) and (max-width: 767px) {
+            #dicas .grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+            #dicas .grid > div:nth-child(3) {
+                grid-column: 1 / -1;
+                justify-self: center;
+                max-width: 50%;
+            }
+            #dicas .glass-card {
+                padding: 0.75rem;
+            }
+            #dicas .glass-card h4 {
+                font-size: 1.2rem;
+                margin-bottom: 0.5rem;
+            }
+            #dicas .glass-card p {
+                font-size: 0.9rem;
+            }
+            #dicas .text-6xl {
+                font-size: 3rem;
+                margin-bottom: 0.5rem;
+            }
+        }
+
         @media (max-width: 480px) {
             .section-wrapper {
                 padding: 1.5rem 0.5rem;
@@ -240,33 +265,31 @@
                 font-size: 0.8rem;
                 space-y: 0.25rem;
             }
-            /* Reverted specific adjustments for #carreira-b */
             #carreira-b .glass-card h4 {
-                font-size: 1.2rem; /* Adjusted back to previous size */
-                margin-bottom: 0.5rem;
+                font-size: 1rem; /* Reduzido para caber melhor */
+                margin-bottom: 0.4rem;
             }
             #carreira-b .chart-container {
-                height: 200px; /* Adjusted back to previous size */
+                height: 280px; /* Aumentado para maior visibilidade */
             }
 
-            /* Reverted specific adjustments for #dicas */
             #dicas .grid {
-                grid-template-columns: 1fr; /* Stack cards vertically on small screens */
-                gap: 1rem; /* Reduced gap */
+                grid-template-columns: 1fr; /* Mantido empilhado para telas muito pequenas */
+                gap: 0.5rem;
             }
             #dicas .glass-card {
-                padding: 0.75rem;
+                padding: 0.4rem;
             }
             #dicas .glass-card h4 {
-                font-size: 1.1rem;
-                margin-bottom: 0.5rem;
+                font-size: 0.9rem;
+                margin-bottom: 0.3rem;
             }
             #dicas .glass-card p {
-                font-size: 0.8rem;
+                font-size: 0.7rem;
             }
             #dicas .text-6xl {
-                font-size: 3rem; /* Smaller icons */
-                margin-bottom: 0.5rem;
+                font-size: 2rem;
+                margin-bottom: 0.3rem;
             }
 
             footer .text-3xl { font-size: 1.2rem; margin-bottom: 0.5rem;}
@@ -562,7 +585,6 @@
                     <a href="https://www.linkedin.com/in/jean-gon%C3%A7alves-489b7b103/" target="_blank" class="inline-flex items-center justify-center px-10 py-5 bg-indigo-500 text-white font-semibold text-xl rounded-full shadow-lg hover:bg-indigo-600 transition-all duration-300 transform hover:scale-105">
                         <span class="mr-4">🔗</span> Meu Perfil no LinkedIn
                     </a>
-                    <p class="text-sm text-stone-700 mt-4 break-all animate-in">Site: <a href="https://jean5429.github.io/ti/" target="_blank" class="text-indigo-600 hover:underline">https://jean5429.github.io/ti/</a></p>
                 </div>
             </div>
         </div>
