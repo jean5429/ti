@@ -171,6 +171,32 @@
             footer .w-36, footer .h-36 { width: 100px; height: 100px; }
         }
 
+        @media (min-width: 481px) and (max-width: 767px) {
+            #dicas .grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+            #dicas .grid > div:nth-child(3) {
+                grid-column: 1 / -1;
+                justify-self: center;
+                max-width: 50%;
+            }
+            #dicas .glass-card {
+                padding: 0.75rem;
+            }
+            #dicas .glass-card h4 {
+                font-size: 1.2rem;
+                margin-bottom: 0.5rem;
+            }
+            #dicas .glass-card p {
+                font-size: 0.9rem;
+            }
+            #dicas .text-6xl {
+                font-size: 3rem;
+                margin-bottom: 0.5rem;
+            }
+        }
+
         @media (max-width: 480px) {
             .section-wrapper {
                 padding: 1.5rem 0.5rem;
@@ -239,31 +265,31 @@
                 font-size: 0.8rem;
                 space-y: 0.25rem;
             }
-            #carreira-b .glass-card h4 { /* Específico para 9-B */
-                font-size: 1.1rem; /* Reduzindo a fonte do título do card */
-                margin-bottom: 0.5rem;
+            #carreira-b .glass-card h4 {
+                font-size: 1rem; /* Reduzido para caber melhor */
+                margin-bottom: 0.4rem;
             }
             #carreira-b .chart-container {
-                height: 250px; /* Aumentando a altura do gráfico para maior visibilidade */
+                height: 280px; /* Aumentado para maior visibilidade */
             }
 
             #dicas .grid {
-                grid-template-columns: 1fr;
-                gap: 0.75rem;
+                grid-template-columns: 1fr; /* Mantido empilhado para telas muito pequenas */
+                gap: 0.5rem;
             }
             #dicas .glass-card {
-                padding: 0.5rem;
+                padding: 0.4rem;
             }
             #dicas .glass-card h4 {
-                font-size: 1rem;
-                margin-bottom: 0.4rem;
+                font-size: 0.9rem;
+                margin-bottom: 0.3rem;
             }
             #dicas .glass-card p {
-                font-size: 0.75rem;
+                font-size: 0.7rem;
             }
             #dicas .text-6xl {
-                font-size: 2.5rem;
-                margin-bottom: 0.4rem;
+                font-size: 2rem;
+                margin-bottom: 0.3rem;
             }
 
             footer .text-3xl { font-size: 1.2rem; margin-bottom: 0.5rem;}
